@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAccount, useSendTransaction, useChainId} from 'wagmi';
+import { useAccount, useChainId} from 'wagmi';
 import { parseEther } from 'viem';
 
 const privatePriceValue = 0.01; // Private price per MVT in USD
@@ -35,6 +35,11 @@ declare global {
     }
 }
 
+// Add this type near the top with other interfaces
+interface EthereumProvider {
+    request: (args: { method: string; params: any[] }) => Promise<any>;
+}
+
 function PresaleModal({ modalOpen, closeModal }: PresaleModalProps) {
     const chainId = useChainId();
     const [timeLeft, setTimeLeft] = useState('');
@@ -47,8 +52,7 @@ function PresaleModal({ modalOpen, closeModal }: PresaleModalProps) {
     const [isLoading, setIsLoading] = useState(false);
 
     // Add wagmi hooks
-    const { address } = useAccount();
-    const { sendTransaction } = useSendTransaction();
+    const { address, connector } = useAccount();
 
     useEffect(() => {
         if (chainId) {
@@ -160,17 +164,24 @@ function PresaleModal({ modalOpen, closeModal }: PresaleModalProps) {
 
         setIsLoading(true);
         try {
+            const provider = (await connector?.getProvider()) as EthereumProvider;
             const recipientAddress = selectedNetwork === 'ETH' 
                 ? ETH_RECIPIENT_ADDRESS 
                 : BNB_RECIPIENT_ADDRESS;
 
+            const transactionParameters = {
+                to: recipientAddress,
+                from: address,
+                value: parseEther(donationAmount).toString(16),
+                chainId: selectedNetwork === 'ETH' ? ETH_CHAIN_ID : BSC_CHAIN_ID,
+            };
 
-            // Send transaction using wagmi
-            await sendTransaction({
-                to: recipientAddress as `0x${string}`,
-                value: parseEther(donationAmount)
+            const transactionHash = await provider.request({
+                method: 'eth_sendTransaction',
+                params: [transactionParameters],
             });
-            
+
+            console.log('Transaction hash:', transactionHash);
             closeModal();
         } catch (error) {
             console.error('Transaction failed:', error);
@@ -224,8 +235,15 @@ function PresaleModal({ modalOpen, closeModal }: PresaleModalProps) {
     // Update the network selection handler
     const handleNetworkChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newNetwork = e.target.value;
-        setSelectedNetwork(newNetwork);
-        await switchNetwork(newNetwork);
+        try {
+            await switchNetwork(newNetwork);
+            setSelectedNetwork(newNetwork);
+            
+        } catch (error) {
+            console.error('Failed to switch network:', error);
+            // Revert the select value if network switch fails
+            setSelectedNetwork(selectedNetwork);
+        }
     };
 
     return (
