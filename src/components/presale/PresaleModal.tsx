@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useAccount, useSendTransaction } from 'wagmi';
+import { useAccount, useSendTransaction, useChainId} from 'wagmi';
+import { parseEther } from 'viem';
 
 const privatePriceValue = 0.01; // Private price per MVT in USD
 const listingPriceValue = 0.18;
@@ -10,6 +11,10 @@ const minimal_bnb_AllocationValue = 0.5;
 // Add recipient addresses
 const ETH_RECIPIENT_ADDRESS = '0xd65cE7930413EED605Ec0f1773380Cd15946A353';
 const BNB_RECIPIENT_ADDRESS = '0xd65cE7930413EED605Ec0f1773380Cd15946A353';
+
+// Add these chain IDs at the top with other constants
+const BSC_CHAIN_ID = '0x38'; // 56 in decimal
+const ETH_CHAIN_ID = '0x1'; // 1 in decimal
 
 interface PresaleModalProps {
     modalOpen: boolean,
@@ -31,6 +36,7 @@ declare global {
 }
 
 function PresaleModal({ modalOpen, closeModal }: PresaleModalProps) {
+    const chainId = useChainId();
     const [timeLeft, setTimeLeft] = useState('');
     // Add new state for conversion rates
     const [conversionRates, setConversionRates] = useState<ConversionRates>({ ETH: 0, BNB: 0 });
@@ -43,6 +49,17 @@ function PresaleModal({ modalOpen, closeModal }: PresaleModalProps) {
     // Add wagmi hooks
     const { address } = useAccount();
     const { sendTransaction } = useSendTransaction();
+
+    useEffect(() => {
+        if (chainId) {
+            // Set network based on chain ID
+            if (chainId === 1) { // Ethereum Mainnet
+                setSelectedNetwork('ETH');
+            } else if (chainId === 56) { // BSC Mainnet
+                setSelectedNetwork('BNB');
+            }
+        }
+    }, [chainId]);
 
     // Add new useEffect for fetching conversion rates
     useEffect(() => {
@@ -147,13 +164,11 @@ function PresaleModal({ modalOpen, closeModal }: PresaleModalProps) {
                 ? ETH_RECIPIENT_ADDRESS 
                 : BNB_RECIPIENT_ADDRESS;
 
-            // Convert donation amount to Wei
-            const amountWei = BigInt(parseFloat(donationAmount) * 1e18);
 
             // Send transaction using wagmi
-             await sendTransaction({
-                to: recipientAddress,
-                value: amountWei,
+            await sendTransaction({
+                to: recipientAddress as `0x${string}`,
+                value: parseEther(donationAmount)
             });
             
             closeModal();
@@ -163,6 +178,54 @@ function PresaleModal({ modalOpen, closeModal }: PresaleModalProps) {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    // Add new function to handle network switching
+    const switchNetwork = async (networkType: string) => {
+        try {
+            if (networkType === 'BNB') {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: BSC_CHAIN_ID }],
+                });
+            } else {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: ETH_CHAIN_ID }],
+                });
+            }
+        } catch (error: any) {
+            // If BSC network is not added, add it
+            if (error.code === 4902 && networkType === 'BNB') {
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: BSC_CHAIN_ID,
+                            chainName: 'Binance Smart Chain',
+                            nativeCurrency: {
+                                name: 'BNB',
+                                symbol: 'BNB',
+                                decimals: 18
+                            },
+                            rpcUrls: ['https://bsc-dataseed.binance.org/'],
+                            blockExplorerUrls: ['https://bscscan.com/']
+                        }]
+                    });
+                } catch (addError) {
+                    console.error('Error adding BSC network:', addError);
+                }
+            } else {
+                console.error('Error switching network:', error);
+            }
+        }
+    };
+
+    // Update the network selection handler
+    const handleNetworkChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newNetwork = e.target.value;
+        setSelectedNetwork(newNetwork);
+        await switchNetwork(newNetwork);
     };
 
     return (
@@ -241,7 +304,7 @@ function PresaleModal({ modalOpen, closeModal }: PresaleModalProps) {
                         id="crypto-type" 
                         className="i-select" 
                         value={selectedNetwork}
-                        onChange={(e) => setSelectedNetwork(e.target.value)}
+                        onChange={handleNetworkChange}
                     >
                         <option value="ETH">ETH</option>
                         <option value="BNB">BNB</option>

@@ -9,13 +9,19 @@ import {
   getDefaultConfig,
   RainbowKitProvider,
 } from '@rainbow-me/rainbowkit'
+import {
+  trustWallet,
+  metaMaskWallet,
+  coinbaseWallet,
+  walletConnectWallet,
+  ledgerWallet,
+  rabbyWallet,
+  rainbowWallet,
+} from '@rainbow-me/rainbowkit/wallets'
 import { WagmiProvider } from 'wagmi';
 import {
   mainnet,
-  polygon,
-  optimism,
-  arbitrum,
-  base,
+  bsc,
 } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -24,8 +30,27 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 const config = getDefaultConfig({
   appName: 'vulpes-test',
   projectId: '9bbae8b57e70527ed45720c911751924', // Get this from WalletConnect Cloud
-  chains: [mainnet, polygon, optimism, arbitrum, base],
+  chains: [mainnet, bsc],
   ssr: true,
+  wallets: [
+    {
+      groupName: 'Popular',
+      wallets: [
+        metaMaskWallet,
+        coinbaseWallet,
+        walletConnectWallet,
+        trustWallet,
+      ]
+    },
+    {
+      groupName: 'More',
+      wallets: [
+        rainbowWallet,
+        ledgerWallet,
+        rabbyWallet,
+      ]
+    }
+  ]
 })
 
 const queryClient = new QueryClient()
@@ -45,6 +70,8 @@ function App() {
     </WagmiProvider>
   )
 }
+
+
 
 export default App  
 
