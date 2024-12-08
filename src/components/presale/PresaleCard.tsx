@@ -6,7 +6,7 @@ import { toast } from "react-toastify"
 function PresaleCard() {
     const [modalOpen, setModalOpen] = useState(false)
     const [timeLeft, setTimeLeft] = useState('');
-    const { isConnected, address } = useAccount()
+    const { address } = useAccount()
     
     useEffect(() => {
         const endDate = new Date('2024-12-31T23:59:59');

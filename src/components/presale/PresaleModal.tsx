@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import Web3 from 'web3';
 import { useAccount, useSendTransaction } from 'wagmi';
 
 const privatePriceValue = 0.01; // Private price per MVT in USD
@@ -152,7 +151,7 @@ function PresaleModal({ modalOpen, closeModal }: PresaleModalProps) {
             const amountWei = BigInt(parseFloat(donationAmount) * 1e18);
 
             // Send transaction using wagmi
-            const  hash  = await sendTransaction({
+             await sendTransaction({
                 to: recipientAddress,
                 value: amountWei,
             });
