@@ -1,4 +1,4 @@
-
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 function Header() {
     return (
         <header>
@@ -9,6 +9,7 @@ function Header() {
                 {/* <appkit-button>
                     Connect Wallet
                 </appkit-button> */}
+                <ConnectButton />
             </div>
         </header>
     )
