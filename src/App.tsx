@@ -3,6 +3,8 @@ import HeroSection from './components/hero/HeroSection'
 import PresaleCard from './components/presale/PresaleCard'
 import './App.css'
 import '@rainbow-me/rainbowkit/styles.css'
+import 'react-toastify/dist/ReactToastify.css'
+import { ToastContainer } from 'react-toastify'
 import {
   getDefaultConfig,
   RainbowKitProvider,
@@ -37,6 +39,7 @@ function App() {
             <HeroSection />
             <PresaleCard />
           </Layout>
+          <ToastContainer position="top-right" />
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
