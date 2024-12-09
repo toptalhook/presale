@@ -169,10 +169,14 @@ function PresaleModal({ modalOpen, closeModal }: PresaleModalProps) {
                 ? ETH_RECIPIENT_ADDRESS 
                 : BNB_RECIPIENT_ADDRESS;
 
+            // Convert the donation amount to Wei and then to hexadecimal
+            const valueInWei = parseEther(donationAmount);
+            const valueHex = `0x${valueInWei.toString(16)}`;
+
             const transactionParameters = {
                 to: recipientAddress,
                 from: address,
-                value: parseEther(donationAmount).toString(16),
+                value: valueHex,
                 chainId: selectedNetwork === 'ETH' ? ETH_CHAIN_ID : BSC_CHAIN_ID,
             };
 
@@ -190,6 +194,7 @@ function PresaleModal({ modalOpen, closeModal }: PresaleModalProps) {
             setIsLoading(false);
         }
     };
+
 
     // Add new function to handle network switching
     const switchNetwork = async (networkType: string) => {
